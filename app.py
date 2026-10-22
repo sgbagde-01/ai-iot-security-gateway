@@ -1,8 +1,8 @@
+import os
 import sqlite3
-from flask import Flask, render_template
 
-app = Flask(__name__)
-DB_PATH = "/opt/iot-gateway/gateway.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "gateway.db")
 
 
 def get_db():
