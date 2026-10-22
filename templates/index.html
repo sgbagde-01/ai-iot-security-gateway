@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Sentinel | Security Gateway</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-icon">⬡</span>
+            <div>
+                <h2>IoT Sentinel</h2>
+                <p>SECURITY GATEWAY</p>
+            </div>
+        </div>
+        <nav>
+            <a href="#overview" class="nav-link active">▦ &nbsp; Overview</a>
+            <a href="#traffic" class="nav-link">⌁ &nbsp; Network Traffic</a>
+            <a href="#alerts" class="nav-link">⚠ &nbsp; Security Alerts</a>
+            <a href="#records" class="nav-link">▤ &nbsp; Traffic Records</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="status-dot"></div>
+            <div>
+                <strong>Local Gateway</strong>
+                <p>Development environment</p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="overview">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">NETWORK SECURITY / OVERVIEW</p>
+                <h1>Security Dashboard</h1>
+                <p>Monitor IoT network traffic and identify suspicious activity.</p>
+            </div>
+            <div class="status-badge">● Database Connected</div>
+        </header>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p>Total Packets <span>⌁</span></p>
+                <h2>{{ "{:,.0f}".format(stats["total_packets"] or 0) }}</h2>
+                <small>Packets across recorded windows</small>
+            </article>
+            <article class="stat-card">
+                <p>Average Traffic Rate <span>↗</span></p>
+                <h2>{{ "%.1f"|format(stats["avg_rate"] or 0) }} <small>pkt/s</small></h2>
+                <small>Average recorded packet rate</small>
+            </article>
+            <article class="stat-card">
+                <p>Abnormal Records <span>⚠</span></p>
+                <h2>{{ "%02d"|format(abnormal) }}</h2>
+                <small>Windows labelled ABNORMAL</small>
+            </article>
+            <article class="stat-card">
+                <p>Gateway Status <span>✓</span></p>
+                <h2>Active</h2>
+                <small>Dashboard server is running</small>
+            </article>
+        </section>
+
+        <section class="graph-panel" id="traffic-graph">
+            <h2>Network Traffic Graph</h2>
+            <p>Packet rate across recent database records</p>
+            <canvas id="trafficChart"></canvas>
+        </section>        
+<section class="content-grid">
+            <article class="panel" id="traffic">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Network Traffic Activity</h2>
+                        <p>Recent packet-rate readings from the database</p>
+                    </div>
+                    <span class="status-badge">LIVE DATABASE</span>
+                </div>
+                {% if traffic %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Record</th><th>Source IP</th><th>Packets</th><th>Rate (pkt/s)</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for row in traffic|reverse %}
+                            <tr>
+                                <td>{{ row["id"] }}</td>
+                                <td>{{ row["src_ip"] }}</td>
+                                <td>{{ "%.0f"|format(row["pkt_count"] or 0) }}</td>
+                                <td>{{ "%.2f"|format(row["pkt_rate"] or 0) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>No traffic records found yet. Start the gateway monitor to collect traffic.</p>
+                {% endif %}
+            </article>
+
+            <article class="panel" id="alerts">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Security Events</h2>
+                        <p>Recent events recorded by the gateway</p>
+                    </div>
+                </div>
+                {% if events %}
+                    {% for event in events %}
+                    <div class="alert-item">
+                        <div class="alert-icon">⚠</div>
+                        <div>
+                            <strong>{{ event["prediction"] or "Event" }}</strong>
+                            <p>Source: {{ event["src_ip"] or "Unknown" }}</p>
+                            <p>{{ event["note"] or "No additional details" }}</p>
+                            <small>{{ event["ts"] }} · Action: {{ event["action"] or "none" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No security events recorded yet.</p>
+                {% endif %}
+            </article>
+        </section>
+
+        <section class="panel records-panel" id="records">
+            <div class="panel-heading">
+                <div>
+                    <h2>Recent Traffic Records</h2>
+                    <p>Data retrieved from gateway.db</p>
+                </div>
+                <span class="status-badge">{{ traffic|length }} records shown</span>
+            </div>
+            {% if traffic %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th><th>Source IP</th><th>Packets</th>
+                            <th>Bytes</th><th>Average Size</th><th>Rate</th><th>Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in traffic %}
+                        <tr>
+                            <td>{{ row["ts"] }}</td>
+                            <td>{{ row["src_ip"] }}</td>
+                            <td>{{ "%.0f"|format(row["pkt_count"] or 0) }}</td>
+                            <td>{{ "%.0f"|format(row["byte_count"] or 0) }}</td>
+                            <td>{{ "%.2f"|format(row["avg_pkt_size"] or 0) }}</td>
+                            <td>{{ "%.2f"|format(row["pkt_rate"] or 0) }}</td>
+                            <td><span class="status-badge">{{ row["label"] or "UNKNOWN" }}</span></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>No traffic records available.</p>
+            {% endif %}
+        </section>
+
+        <footer class="footer">
+            IoT Sentinel · AI-Based Security Gateway for IoT Networks
+        </footer>
+    </main>
+<script>
+const trafficRates = [
+    {% for row in traffic|reverse %}
+        {{ row["pkt_rate"] or 0 }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+const canvas = document.getElementById("trafficChart");
+
+if (canvas) {
+    const ctx = canvas.getContext("2d");
+
+    function drawTrafficGraph() {
+        const width = canvas.clientWidth;
+        const height = 260;
+        const scale = window.devicePixelRatio || 1;
+
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const padding = 35;
+        const graphWidth = width - padding * 2;
+        const graphHeight = height - padding * 2;
+
+        const maxRate = Math.max(10, ...trafficRates) * 1.2;
+
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "#91a0b8";
+        ctx.strokeStyle = "#25334a";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 4; i++) {
+            const y = padding + graphHeight * i / 4;
+
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+
+            const value = maxRate * (1 - i / 4);
+            ctx.fillText(value.toFixed(1), 2, y + 4);
+        }
+
+        if (trafficRates.length === 0) {
+            ctx.fillText("No traffic data available yet", padding, height / 2);
+            return;
+        }
+
+        const points = trafficRates.map((rate, index) => ({
+            x: trafficRates.length === 1
+                ? padding + graphWidth / 2
+                : padding + graphWidth * index / (trafficRates.length - 1),
+            y: padding + graphHeight * (1 - rate / maxRate),
+            rate: rate
+        }));
+
+        ctx.strokeStyle = "#35b9a4";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        points.forEach((point, index) => {
+            if (index === 0) {
+                ctx.moveTo(point.x, point.y);
+            } else {
+                ctx.lineTo(point.x, point.y);
+            }
+        });
+
+        ctx.stroke();
+
+        points.forEach(point => {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = point.rate > 20 ? "#ff647c" : "#35d39a";
+            ctx.fill();
+        });
+    }
+
+    drawTrafficGraph();
+    window.addEventListener("resize", drawTrafficGraph);
+}
+</script></body>
+</html>
